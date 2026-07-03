@@ -8,58 +8,74 @@ public class GestorNivel {
     PanelJuego panel;
     public ArrayList<Rectangle> colisionesSuelo = new ArrayList<>();
 
-    // ========================================================================
-    // MAPA DEL NIVEL 1-1 COMPLETO (211 columnas de ancho)
-    // ========================================================================
-    String[] mapaTexto = {
-            "                                                                                                                                                                                                                   ",
-            "                                                                                                                                                                                                                   ",
-            "                                                                                                                                                                                            XX                     ",
-            "                                                                                                                                                                                           XXX                     ",
-            "                                                                                                                                                                                          XXXX                     ",
-            "                                                                                                                                                                                         XXXXX                     ",
-            "                                              TT                                                                                         XX  X                                          XXXXXX                     ",
-            "                                      TT      TT         TT                                                                             XXX  XX                                        XXXXXXX                     ",
-            "                            TT        TT      TT         TT                                                                            XXXX  XXX                                      XXXXXXXX                     ",
-            "                            TT        TT      TT         TT                                                                           XXXXX  XXXX                                    XXXXXXXXX                     ",
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  XXXXXXXXXXXXXXX   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  XXXXXXXXXXXXXXX   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    };
+    int filas = 12;
+    int columnas = 90; // Mapa corto pero intenso
 
-    int filas = mapaTexto.length;
-    int columnas = mapaTexto[0].length();
-
-    // La matriz numérica se generará automáticamente a partir del texto
+    // Matriz numérica vacía que llenaremos con código
     int[][] mapaPrueba = new int[filas][columnas];
 
     public GestorNivel(PanelJuego panel) {
         this.panel = panel;
-        cargarMapaDesdeTexto(); // 1. Convertimos el texto a números
-        generarColisiones();    // 2. Creamos los rectángulos físicos
+        generarMapa(); // 1. El algoritmo construye el mundo
+        generarColisiones();     // 2. Le ponemos físicas a los bloques
     }
 
-    // Traduce el diseño de texto a la matriz numérica que usa el juego
-    public void cargarMapaDesdeTexto() {
-        for (int f = 0; f < filas; f++) {
-            for (int c = 0; c < columnas; c++) {
-                char letra = mapaTexto[f].charAt(c);
 
-                if (letra == 'X') {
-                    mapaPrueba[f][c] = 1; // 1 = Ladrillo sólido
-                } else if (letra == 'T') {
-                    mapaPrueba[f][c] = 2; // 2 = Tubería sólida
-                } else {
-                    mapaPrueba[f][c] = 0; // 0 = Aire / Cielo
-                }
+    // aquí generamos la lógica para construir el terreno
+
+    public void generarMapa() {
+        // Construimos el suelo principal y los pozos
+        for (int c = 0; c < columnas; c++) {
+            // Definimos usando mateáticas dónde están los pozos
+            boolean esPozo = (c >= 12 && c <= 14) || (c >= 35 && c <= 38) || (c >= 60 && c <= 63);
+
+            if (!esPozo) {
+                mapaPrueba[10][c] = 1; // superficie del suelo
+                mapaPrueba[11][c] = 1; // Suelo profundo
             }
+        }
+
+        // creamos tuberías usando nuestro propio método
+        crearTuberia(20, 8); // Tubería en la columna 20, empieza en la fila 8 y tiene altura 2
+        crearTuberia(45, 7); // Tubería más alta en la columna 45
+        crearTuberia(75, 8);
+
+        // construir Escaleras y Plataformas
+        //escalera antes del segundo pozo
+        mapaPrueba[9][30] = 1;
+        mapaPrueba[9][31] = 1;
+        mapaPrueba[8][32] = 1;
+        mapaPrueba[8][33] = 1;
+
+        // plataforma flotante
+        for(int c = 48; c <= 52; c++) {
+            mapaPrueba[6][c] = 1;
+        }
+
+        //scalera final para atrapar el banderin
+        for (int escalon = 0; escalon < 6; escalon++) {
+            for (int f = 9; f >= 9 - escalon; f--) {
+                mapaPrueba[f][77 + escalon] = 1;
+            }
+        }
+
+
+        mapaPrueba[9][85] = 1;
+    }
+
+    // Método para apilar bloques de tubería hacia abajo
+    private void crearTuberia(int col, int filaInicio) {
+        for (int f = filaInicio; f <= 9; f++) {
+            mapaPrueba[f][col] = 2; // El 2 representa a la tubería
         }
     }
 
+
+    //fisicas
     public void generarColisiones() {
         colisionesSuelo.clear();
         for (int fila = 0; fila < filas; fila++) {
             for (int col = 0; col < columnas; col++) {
-                // Tanto los ladrillos (1) como las tuberías (2) son sólidos
                 if (mapaPrueba[fila][col] == 1 || mapaPrueba[fila][col] == 2) {
                     int x = col * panel.TAMANO_BLOQUE;
                     int y = fila * panel.TAMANO_BLOQUE;
@@ -75,45 +91,31 @@ public class GestorNivel {
                 int x = col * panel.TAMANO_BLOQUE;
                 int y = fila * panel.TAMANO_BLOQUE;
 
-                // --- DIBUJAR LADRILLOS ---
+                // --- LADRILLOS (Figuras limpias) ---
                 if (mapaPrueba[fila][col] == 1) {
-                    Color colorFondoLadrillo = new Color(200, 76, 12);
-                    Color colorSombra = new Color(110, 30, 0);
-                    Color colorBrillo = new Color(255, 180, 140);
-
-                    g2d.setColor(colorFondoLadrillo);
-                    g2d.fillRect(x, y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE);
-                    g2d.setColor(colorSombra);
-                    g2d.drawRect(x, y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE);
-
-                    g2d.drawLine(x, y + panel.TAMANO_BLOQUE/2, x + panel.TAMANO_BLOQUE, y + panel.TAMANO_BLOQUE/2);
-                    g2d.drawLine(x + panel.TAMANO_BLOQUE/2, y, x + panel.TAMANO_BLOQUE/2, y + panel.TAMANO_BLOQUE/2);
-
-                    g2d.setColor(colorBrillo);
-                    g2d.drawLine(x + 1, y + 1, x + panel.TAMANO_BLOQUE - 2, y + 1);
-                    g2d.drawLine(x + 1, y + 1, x + 1, y + panel.TAMANO_BLOQUE/2 - 1);
-                }
-                // --- DIBUJAR TUBERÍAS ---
-                else if (mapaPrueba[fila][col] == 2) {
-                    Color colorTuberia = new Color(0, 180, 0); // Verde clásico
-                    Color colorBrilloTuberia = new Color(100, 255, 100);
-                    Color colorSombraTuberia = new Color(0, 100, 0);
-
-                    // Cuerpo de la tubería
-                    g2d.setColor(colorTuberia);
+                    g2d.setColor(new Color(210, 80, 20));
                     g2d.fillRect(x, y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE);
 
-                    // Contorno
                     g2d.setColor(Color.BLACK);
                     g2d.drawRect(x, y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE);
 
-                    // Detalle de iluminación (Efecto de tubo cilíndrico)
-                    g2d.setColor(colorBrilloTuberia);
-                    g2d.fillRect(x + 5, y, 10, panel.TAMANO_BLOQUE);
+                    g2d.setColor(new Color(170, 50, 10));
+                    g2d.fillRect(x + 8, y + 8, panel.TAMANO_BLOQUE - 16, panel.TAMANO_BLOQUE - 16);
+                }
+                // --- TUBERÍAS (Superposición de figuras) ---
+                else if (mapaPrueba[fila][col] == 2) {
+                    g2d.setColor(new Color(0, 160, 0));
+                    g2d.fillRect(x + 4, y, panel.TAMANO_BLOQUE - 8, panel.TAMANO_BLOQUE);
+                    g2d.setColor(Color.BLACK);
+                    g2d.drawRect(x + 4, y, panel.TAMANO_BLOQUE - 8, panel.TAMANO_BLOQUE);
 
-                    // Detalle de sombra lateral
-                    g2d.setColor(colorSombraTuberia);
-                    g2d.fillRect(x + panel.TAMANO_BLOQUE - 10, y, 10, panel.TAMANO_BLOQUE);
+                    // La tapa de la tubería (Solo se dibuja en el bloque superior)
+                    if (fila > 0 && mapaPrueba[fila - 1][col] != 2) {
+                        g2d.setColor(new Color(0, 180, 0));
+                        g2d.fillRect(x, y, panel.TAMANO_BLOQUE, 20);
+                        g2d.setColor(Color.BLACK);
+                        g2d.drawRect(x, y, panel.TAMANO_BLOQUE, 20);
+                    }
                 }
             }
         }

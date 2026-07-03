@@ -1,18 +1,21 @@
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+/**
+ * cuando el usuario presiona una tecla, eso viene a esta clase
+ */
 public class ManejadorTeclas implements KeyListener {
 
     public boolean arriba, abajo, izquierda, derecha;
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // No se usa en juegos, pero es obligatorio declararlo
+        // no se necesita usar esta variable, está acá porque si
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        int codigo = e.getKeyCode();
+        int codigo = e.getKeyCode(); // obtenemos el codigo del teclado presionado
 
         // Cuando presionas la tecla, la variable se vuelve verdadera
         if (codigo == KeyEvent.VK_W || codigo == KeyEvent.VK_UP) arriba = true;
@@ -23,7 +26,7 @@ public class ManejadorTeclas implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        int codigo = e.getKeyCode();
+        int codigo = e.getKeyCode();// obtenemos el codigo del teclado presionado
 
         // Cuando sueltas la tecla, la variable se vuelve falsa para que deje de moverse
         if (codigo == KeyEvent.VK_W || codigo == KeyEvent.VK_UP) arriba = false;

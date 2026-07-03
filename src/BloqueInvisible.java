@@ -2,6 +2,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
+/**
+ * esta clase representa el bloque que no se ve hasta que mario lo golpea
+ */
 public class BloqueInvisible {
 
     int x, y, ancho, alto;
@@ -12,10 +15,10 @@ public class BloqueInvisible {
         this.y = y;
         this.ancho = ancho;
         this.alto = alto;
-        this.descubierto = false; // El jugador no lo ve al inicio
+        this.descubierto = false; // esta variable indica cuando el jugador ve o deja de ver al bloque
     }
 
-    // El Hitbox es una caja matemática del tamaño exacto del bloque
+    // El Hitbox es una caja matemática del tamaño del bloque
     public Rectangle obtenerHitbox() {
         return new Rectangle(x, y, ancho, alto);
     }

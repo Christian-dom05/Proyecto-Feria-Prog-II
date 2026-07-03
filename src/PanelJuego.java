@@ -1,18 +1,18 @@
 import javax.swing.JPanel;
 import java.awt.*;
-
+import java.awt.Font;
 public class PanelJuego extends JPanel implements Runnable {
 
-    // 1. CONFIGURACIONES DE PANTALLA
-    final int TAMANO_BLOQUE = 48; // Escala base para los bloques (ej. 48x48 píxeles)
+    // configuracion de pantalla
+    final int TAMANO_BLOQUE = 48;
     final int COLUMNAS_PANTALLA = 16;
     final int FILAS_PANTALLA = 12;
 
-    // Resolución final: 768 x 576 píxeles
+    // Resolución pantalla 768 x 576 píxeles
     final int ANCHO_PANTALLA = TAMANO_BLOQUE * COLUMNAS_PANTALLA;
     final int ALTO_PANTALLA = TAMANO_BLOQUE * FILAS_PANTALLA;
 
-    // 2. SISTEMA DE HILOS Y FPS
+    // FPS
     int FPS = 60;
     Thread hiloJuego;
 
@@ -21,14 +21,22 @@ public class PanelJuego extends JPanel implements Runnable {
     GestorNivel gestorNivel = new GestorNivel(this);
     HongoVenenoso hongoMalo = new HongoVenenoso(this, 0, 0);
 
-    // TRAMPA 1: El bloque oculto original
+    // trampa del bloque oculto original
     BloqueInvisible bloqueOculto = new BloqueInvisible(500, 300, TAMANO_BLOQUE, TAMANO_BLOQUE);
 
-    // TRAMPA 2: El nuevo bloque sorpresa amarillo
+    // trampa dell nuevo bloque sorpresa amarillo
     BloqueSorpresa bloqueSorpresa = new BloqueSorpresa(300, 336, TAMANO_BLOQUE, TAMANO_BLOQUE);
-    // NUEVA VARIABLE: La posición de la cámara
+    // aqui vamos creando enemigos
+    Enemigo[] goombas = {
+            new Enemigo(25 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(42 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE)
+    };
+    // variable que indica la posicion de la camara
     int offsetCamaraX = 0;
+    Banderin meta = new Banderin(85 * TAMANO_BLOQUE, 2 * TAMANO_BLOQUE, TAMANO_BLOQUE, 7 * TAMANO_BLOQUE);
 
+    // Estado del juego
+    boolean juegoGanado = false;
 
 
 
@@ -38,9 +46,7 @@ public class PanelJuego extends JPanel implements Runnable {
         this.setDoubleBuffered(true); // Mejora el rendimiento del renderizado en Swing
 
         this.addKeyListener(teclas);
-        this.setFocusable(true); // Esto es VITAL para que el panel pueda recibir las pulsaciones del teclado
-        // TRUCO: Añadimos la caja del bloque a la lista de colisiones del mapa.
-        // Añadimos el bloque SORPRESA para que Mario pueda pararse sobre él
+        this.setFocusable(true); // Esto es importante para que el panel pueda recibir las pulsaciones del teclado
         gestorNivel.colisionesSuelo.add(bloqueSorpresa.obtenerHitbox());
     }
 
@@ -52,24 +58,24 @@ public class PanelJuego extends JPanel implements Runnable {
     @Override
     public void run() {
         // Calculamos cuánto tiempo debe durar cada "frame" en nanosegundos
-        double intervaloDibujo = 1000000000.0 / FPS; // 0.01666 segundos por frame
+        double intervaloDibujo = 1000000000.0 / FPS; // 0.01666 segundos
         double siguienteTiempoDibujo = System.nanoTime() + intervaloDibujo;
 
-        // Bucle principal del juego (Game Loop)
+        // Bucle principal del juego
         while (hiloJuego != null) {
 
-            // 1. ACTUALIZAR: posiciones, físicas, colisiones, trampas
+            // actualizar osiciones, físicas, colisiones, trampas
             actualizar();
 
-            // 2. DIBUJAR: repintar la pantalla con los nuevos datos
+            // dibujar, repintar la pantalla con los nuevos datos
             repaint(); // Esto llama automáticamente al método paintComponent()
 
-            // 3. ESPERAR: detener el hilo los milisegundos restantes para clavar los 60 FPS
+            // esperar, detener el hilo los milisegundos restantes para clavar los 60 FPS
             try {
                 double tiempoRestante = siguienteTiempoDibujo - System.nanoTime();
                 tiempoRestante = tiempoRestante / 1000000; // Convertimos de nanosegundos a milisegundos
 
-                // Si actualizó y dibujó muy rápido, esperamos
+                // Si actualizó y dibujó muy rápido
                 if (tiempoRestante < 0) {
                     tiempoRestante = 0;
                 }
@@ -85,12 +91,14 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     public void actualizar() {
-        // 1. ACTUALIZAR FÍSICAS DE MARIO
+        // Si ya ganamos, congelamos todo y no calculamos físicas
+        if (juegoGanado) {
+            return;
+        }
         jugador.actualizar(gestorNivel);
 
-        // 2. LÓGICA DEL BLOQUE SORPRESA (La trampa del hongo)
         if (!bloqueSorpresa.usado) {
-            // Hitbox minúsculo sobre la cabeza de Mario
+            // hitbox sobre mario
             Rectangle cabezaMario = new Rectangle(jugador.x, (int)jugador.y - 1, TAMANO_BLOQUE, 1);
 
             if (cabezaMario.intersects(bloqueSorpresa.obtenerHitbox())) {
@@ -99,7 +107,6 @@ public class PanelJuego extends JPanel implements Runnable {
             }
         }
 
-        // 3. LÓGICA DEL BLOQUE INVISIBLE (La trampa del pozo)
         if (jugador.obtenerHitbox().intersects(bloqueOculto.obtenerHitbox())) {
             if (jugador.velocidadY < 0 && !bloqueOculto.descubierto) {
                 bloqueOculto.descubierto = true;
@@ -109,12 +116,11 @@ public class PanelJuego extends JPanel implements Runnable {
             }
         }
 
-        // 4. ACTUALIZAR FÍSICAS DEL HONGO
+        // actualia fisivas del hongo
         hongoMalo.actualizar(gestorNivel);
 
-        // 5. LÓGICA DE MUERTE (Si Mario toca el hongo)
         if (hongoMalo.activo && jugador.obtenerHitbox().intersects(hongoMalo.obtenerHitbox())) {
-            System.out.println("¡Trolleado! Te comiste el hongo venenoso.");
+            System.out.println("te comiste el hongo venenoso.");
 
             // Regresamos a Mario al inicio
             jugador.x = 100;
@@ -125,8 +131,38 @@ public class PanelJuego extends JPanel implements Runnable {
             bloqueSorpresa.usado = false;
         }
 
-        // 6. LÓGICA DE LA CÁMARA (El Scrolling)
-        // Esto siempre debe ir al final para que la cámara persiga a Mario después de que se movió
+        if (jugador.obtenerHitbox().intersects(meta.obtenerHitbox())) {
+            juegoGanado = true;
+        }
+
+        for (Enemigo goomba : goombas) {
+            if (goomba.vivo) {
+                // solo actualizamos al enemigo si Mario está en la misma pantalla
+                if (Math.abs(goomba.x - jugador.x) < ANCHO_PANTALLA + 100) {
+                    goomba.actualizar(gestorNivel);
+                }
+                // Si Mario choca con el enemigo
+                if (jugador.obtenerHitbox().intersects(goomba.obtenerHitbox())) {
+
+                    // mario debe estar cayendo Y su pie debe estar arriba del enemigo
+                    if (jugador.velocidadY > 0 && jugador.y + TAMANO_BLOQUE - 15 <= goomba.y) {
+                        goomba.vivo = false; // El enemigo muere
+                        jugador.velocidadY = -8; // Mario da un pequeño rebote en el aire
+                    } else {
+                        // Si no lo aplastó, Mario muere
+                        System.out.println("¡Un enemigo te ha atrapado!");
+                        jugador.x = 100;
+                        jugador.y = 100.0;
+
+                        // Resucitamos a los enemigos al morir Mario para que no sea trampa
+                        for (Enemigo e : goombas) {
+                            e.vivo = true;
+                        }
+                    }
+                }
+            }
+        }
+
         int centroPantallaX = ANCHO_PANTALLA / 2;
         offsetCamaraX = jugador.x - centroPantallaX;
 
@@ -141,22 +177,40 @@ public class PanelJuego extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // FONDO (Cielo de Super Mario - Color azul claro)
+        // FONDO cielo de Super Mario - Color azul claro
         this.setBackground(new Color(107, 140, 255));
 
-        // INICIO DE LA CÁMARA
         // Todo lo que se dibuje después de esta línea, se desplazará
         g2d.translate(-offsetCamaraX, 0);
 
-        // DIBUJAMOS EL MUNDO (El orden importa: Mapa -> Trampas -> Entidades -> Jugador)
+
         gestorNivel.dibujar(g2d);
         bloqueOculto.dibujar(g2d);
         bloqueSorpresa.dibujar(g2d);
         hongoMalo.dibujar(g2d);
+
+        // Dibujamos los enemigos
+        for (Enemigo goomba : goombas) {
+            goomba.dibujar(g2d);
+        }
+
+        meta.dibujar(g2d);
         jugador.dibujar(g2d);
 
-        // FIN DE LA CÁMARA (Opcional, pero buena práctica si luego quieres dibujar UI estática como el puntaje)
         g2d.translate(offsetCamaraX, 0);
+
+        if (juegoGanado) {
+            g2d.setColor(new Color(0, 0, 0, 180));
+            g2d.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
+
+            g2d.setColor(new Color(255, 215, 0));
+            g2d.setFont(new Font("Arial", Font.BOLD, 60));
+            g2d.drawString("¡nivel terminado!", ANCHO_PANTALLA / 2 - 280, ALTO_PANTALLA / 2);
+
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+            g2d.drawString("gracias", ANCHO_PANTALLA / 2 - 140, (ALTO_PANTALLA / 2) + 50);
+        }
 
         g2d.dispose();
     }

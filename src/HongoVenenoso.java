@@ -29,7 +29,7 @@ public class HongoVenenoso {
         this.velocidadY = 0;
         this.gravedad = 0.4;
 
-        // AHORA INICIA FALSO (Invisible e inactivo)
+        // inicia como falso
         this.activo = false;
 
         cargarImagen();
@@ -48,7 +48,7 @@ public class HongoVenenoso {
             if (flujoImagen != null) {
                 imagenHongo = ImageIO.read(flujoImagen);
             } else {
-                System.out.println("ADVERTENCIA: No se encontró hongo.png");
+                System.out.println("No se encontró hongo.png");
             }
         } catch (IOException e) {
             e.printStackTrace();
