@@ -20,6 +20,7 @@ public class PanelJuego extends JPanel implements Runnable {
     Jugador jugador = new Jugador(this, teclas);
     GestorNivel gestorNivel = new GestorNivel(this);
     HongoVenenoso hongoMalo = new HongoVenenoso(this, 0, 0);
+    GestorSonido efectosSonido = new GestorSonido();
 
     // trampa del bloque oculto original
     BloqueInvisible bloqueOculto = new BloqueInvisible(500, 300, TAMANO_BLOQUE, TAMANO_BLOQUE);
@@ -30,6 +31,18 @@ public class PanelJuego extends JPanel implements Runnable {
     Enemigo[] goombas = {
             new Enemigo(25 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
             new Enemigo(42 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE)
+    };
+    // --- SISTEMA DE PUNTUACIÓN ---
+    int puntaje = 0;
+
+    // Colocamos algunas monedas en el aire
+    Moneda[] monedas = {
+            // Dos monedas encima de la primera tubería (Columna 20)
+            new Moneda(20 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Moneda(20 * TAMANO_BLOQUE, 5 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE),
+            // Monedas sobre la plataforma flotante (Columnas 49 y 50)
+            new Moneda(49 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Moneda(50 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE)
     };
     // variable que indica la posicion de la camara
     int offsetCamaraX = 0;
@@ -162,6 +175,15 @@ public class PanelJuego extends JPanel implements Runnable {
                 }
             }
         }
+        //monedas
+        for (Moneda moneda : monedas) {
+            // Si no ha sido recogida y Mario la toca
+            if (!moneda.recogida && jugador.obtenerHitbox().intersects(moneda.obtenerHitbox())) {
+                moneda.recogida = true; // Desaparece
+                puntaje += 100;         // Sumamos 100 puntos
+                efectosSonido.reproducir("/moneda.wav");
+            }
+        }
 
         int centroPantallaX = ANCHO_PANTALLA / 2;
         offsetCamaraX = jugador.x - centroPantallaX;
@@ -194,10 +216,26 @@ public class PanelJuego extends JPanel implements Runnable {
             goomba.dibujar(g2d);
         }
 
+        // ... (después de dibujar los enemigos y antes de Mario)
+        for (Moneda moneda : monedas) {
+            moneda.dibujar(g2d);
+        }
+
+        meta.dibujar(g2d);
+        jugador.dibujar(g2d);
+
         meta.dibujar(g2d);
         jugador.dibujar(g2d);
 
         g2d.translate(offsetCamaraX, 0);
+
+        // Este es el texto que acompañará al jugador sin importar cuánto avance en el nivel
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 24));
+        g2d.drawString("MARIO", 40, 40);
+
+        // formato del puntaje de 6 dígitos
+        g2d.drawString(String.format("%06d", puntaje), 40, 70);
 
         if (juegoGanado) {
             g2d.setColor(new Color(0, 0, 0, 180));

@@ -28,7 +28,7 @@ public class Jugador {
     int contadorAnimacion = 0; // Cuenta los frames que pasaron
     int numeroFotograma = 1;   // Alterna entre el fotograma 1 y 2 al caminar
     boolean mirandoDerecha = true; // Para saber hacia dónde voltear la imagen, si se hace false, entonces voltera a la izquierda
-
+    GestorSonido sonidoMario = new GestorSonido();
     public Jugador(PanelJuego panel, ManejadorTeclas teclas) {
         this.panel = panel;
         this.teclas = teclas; // aquí recibe el teclado que esté presionando el usuario
@@ -111,6 +111,7 @@ public class Jugador {
         if (teclas.arriba && enSuelo) {
             velocidadY = fuerzaSalto;
             enSuelo = false;
+            sonidoMario.reproducir("/salto.wav");
         }
 
         // Aplicamos gravedad y movimiento vertical
@@ -140,7 +141,6 @@ public class Jugador {
         }
 
         //animaciones
-
         // si se mueve a la izquierda o derecha
         if (teclas.izquierda || teclas.derecha) {
             contadorAnimacion++; // aumenta el contador
