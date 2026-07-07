@@ -17,7 +17,6 @@ public class HongoVenenoso {
 
     public boolean activo;
 
-    // Nueva variable para la imagen
     BufferedImage imagenHongo;
 
     public HongoVenenoso(PanelJuego panel, int x, int y) {

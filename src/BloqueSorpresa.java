@@ -1,42 +1,44 @@
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
-public class BloqueSorpresa {
-
-    public int x, y, ancho, alto;
-    public boolean usado;
+public class BloqueSorpresa extends Bloque {
+    static BufferedImage imgSorpresa;
+    static BufferedImage imgVacio;
 
     public BloqueSorpresa(int x, int y, int ancho, int alto) {
-        this.x = x;
-        this.y = y;
-        this.ancho = ancho;
-        this.alto = alto;
-        this.usado = false; // Comienza lleno
+        super(x, y, ancho, alto);
+        try {
+            if (imgSorpresa == null) {
+                java.io.InputStream is1 = getClass().getResourceAsStream("/sorpresa.png");
+                if(is1 != null) imgSorpresa = ImageIO.read(is1);
+            }
+            if (imgVacio == null) {
+                java.io.InputStream is2 = getClass().getResourceAsStream("/bloque_vacio.png");
+                if(is2 != null) imgVacio = ImageIO.read(is2);
+            }
+        } catch(Exception e){}
     }
 
-    public Rectangle obtenerHitbox() {
-        return new Rectangle(x, y, ancho, alto);
+    @Override
+    public void reaccionarGolpe(PanelJuego panel) {
+        if (activo) {
+            activo = false;
+            HongoVenenoso nuevoHongo = new HongoVenenoso(panel, this.x, this.y);
+            nuevoHongo.aparecer(this.x, this.y - this.alto);
+            panel.hongosMalos.add(nuevoHongo);
+        }
     }
 
+    @Override
     public void dibujar(Graphics2D g2d) {
-        if (!usado) {
-            // Dibuja el bloque amarillo de interrogación
-            g2d.setColor(new Color(255, 204, 0));
-            g2d.fillRect(x, y, ancho, alto);
-            g2d.setColor(Color.BLACK);
-            g2d.drawRect(x, y, ancho, alto);
-
-            // Símbolo "?" temporal (Luego puedes cambiarlo por un sprite si deseas)
-            g2d.setFont(new Font("Arial", Font.BOLD, ancho / 2));
-            g2d.drawString("?", x + (ancho/3), y + (alto - 12));
+        if (activo) {
+            if (imgSorpresa != null) g2d.drawImage(imgSorpresa, x, y, ancho, alto, null);
+            else { g2d.setColor(new Color(255, 204, 0)); g2d.fillRect(x, y, ancho, alto); g2d.setColor(Color.BLACK); g2d.drawRect(x, y, ancho, alto); }
         } else {
-            // Dibuja el bloque marrón "vacío"
-            g2d.setColor(new Color(139, 69, 19));
-            g2d.fillRect(x, y, ancho, alto);
-            g2d.setColor(Color.BLACK);
-            g2d.drawRect(x, y, ancho, alto);
+            if (imgVacio != null) g2d.drawImage(imgVacio, x, y, ancho, alto, null);
+            else { g2d.setColor(new Color(139, 69, 19)); g2d.fillRect(x, y, ancho, alto); g2d.setColor(Color.BLACK); g2d.drawRect(x, y, ancho, alto); }
         }
     }
 }

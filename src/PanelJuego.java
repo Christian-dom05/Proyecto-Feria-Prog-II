@@ -1,197 +1,184 @@
 import javax.swing.JPanel;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.Font;
+import java.util.ArrayList;
+
 public class PanelJuego extends JPanel implements Runnable {
+    public final int ANCHO_PANTALLA = 800;
+    public final int ALTO_PANTALLA = 600;
+    public final int TAMANO_BLOQUE = 48;
 
-    // configuracion de pantalla
-    final int TAMANO_BLOQUE = 48;
-    final int COLUMNAS_PANTALLA = 16;
-    final int FILAS_PANTALLA = 12;
-
-    // Resolución pantalla 768 x 576 píxeles
-    final int ANCHO_PANTALLA = TAMANO_BLOQUE * COLUMNAS_PANTALLA;
-    final int ALTO_PANTALLA = TAMANO_BLOQUE * FILAS_PANTALLA;
-
-    // FPS
-    int FPS = 60;
     Thread hiloJuego;
+    public ManejadorTeclas teclas = new ManejadorTeclas();
+    public GestorNivel gestorNivel = new GestorNivel(this);
+    public Jugador jugador = new Jugador(this, teclas);
 
-    ManejadorTeclas teclas = new ManejadorTeclas();
-    Jugador jugador = new Jugador(this, teclas);
-    GestorNivel gestorNivel = new GestorNivel(this);
-    HongoVenenoso hongoMalo = new HongoVenenoso(this, 0, 0);
-    GestorSonido efectosSonido = new GestorSonido();
+    public ArrayList<HongoVenenoso> hongosMalos = new ArrayList<>();
+    public Banderin meta = new Banderin(198 * TAMANO_BLOQUE, 2 * TAMANO_BLOQUE, TAMANO_BLOQUE, 7 * TAMANO_BLOQUE);
 
-    // trampa del bloque oculto original
-    BloqueInvisible bloqueOculto = new BloqueInvisible(500, 300, TAMANO_BLOQUE, TAMANO_BLOQUE);
-
-    // trampa dell nuevo bloque sorpresa amarillo
-    BloqueSorpresa bloqueSorpresa = new BloqueSorpresa(300, 336, TAMANO_BLOQUE, TAMANO_BLOQUE);
-    // aqui vamos creando enemigos
-    Enemigo[] goombas = {
-            new Enemigo(25 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
-            new Enemigo(42 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE)
+    public Enemigo[] goombas = {
+            new Enemigo(22 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(40 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(51 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(80 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(97 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(114 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(124 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE),
+            new Enemigo(174 * TAMANO_BLOQUE, 8 * TAMANO_BLOQUE, TAMANO_BLOQUE)
     };
-    // --- SISTEMA DE PUNTUACIÓN ---
-    int puntaje = 0;
 
-    // Colocamos algunas monedas en el aire
-    Moneda[] monedas = {
-            // Dos monedas encima de la primera tubería (Columna 20)
-            new Moneda(20 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE),
-            new Moneda(20 * TAMANO_BLOQUE, 5 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE),
-            // Monedas sobre la plataforma flotante (Columnas 49 y 50)
-            new Moneda(49 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE),
-            new Moneda(50 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE)
-    };
-    // variable que indica la posicion de la camara
-    int offsetCamaraX = 0;
-    Banderin meta = new Banderin(85 * TAMANO_BLOQUE, 2 * TAMANO_BLOQUE, TAMANO_BLOQUE, 7 * TAMANO_BLOQUE);
+    public ArrayList<Moneda> monedas = new ArrayList<>();
+    public GestorSonido efectosSonido = new GestorSonido();
 
-    // Estado del juego
-    boolean juegoGanado = false;
-
-
+    public int offsetCamaraX = 0;
+    public boolean juegoGanado = false;
+    public boolean juegoTerminado = false;
+    public int puntaje = 0;
 
     public PanelJuego() {
-        this.setPreferredSize(new Dimension(ANCHO_PANTALLA, ALTO_PANTALLA));
-        this.setBackground(Color.BLACK); // Color de fondo temporal
-        this.setDoubleBuffered(true); // Mejora el rendimiento del renderizado en Swing
-
+        this.setPreferredSize(new java.awt.Dimension(ANCHO_PANTALLA, ALTO_PANTALLA));
+        this.setDoubleBuffered(true);
         this.addKeyListener(teclas);
-        this.setFocusable(true); // Esto es importante para que el panel pueda recibir las pulsaciones del teclado
-        gestorNivel.colisionesSuelo.add(bloqueSorpresa.obtenerHitbox());
+        this.setFocusable(true);
+
+        // 15 Monedas distribuidas en todo el mapa (Se requieren 1000 pts para ganar)
+        monedas.add(new Moneda(18 * TAMANO_BLOQUE, 6 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(25 * TAMANO_BLOQUE, 6 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, true)); // ¡MALDITA!
+        monedas.add(new Moneda(35 * TAMANO_BLOQUE, 5 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(45 * TAMANO_BLOQUE, 3 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(50 * TAMANO_BLOQUE, 3 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(75 * TAMANO_BLOQUE, 6 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(95 * TAMANO_BLOQUE, 3 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, true)); // ¡MALDITA!
+        monedas.add(new Moneda(105 * TAMANO_BLOQUE, 3 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(125 * TAMANO_BLOQUE, 6 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(135 * TAMANO_BLOQUE, 2 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(170 * TAMANO_BLOQUE, 3 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(221 * TAMANO_BLOQUE, 5 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(222 * TAMANO_BLOQUE, 5 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(223 * TAMANO_BLOQUE, 5 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
+        monedas.add(new Moneda(230 * TAMANO_BLOQUE, 4 * TAMANO_BLOQUE, TAMANO_BLOQUE, TAMANO_BLOQUE, false));
     }
 
-    public void iniciarJuego() {
-        hiloJuego = new Thread(this);
-        hiloJuego.start(); // Esto llama automáticamente al método run()
-    }
+    public void iniciarJuego() { hiloJuego = new Thread(this); hiloJuego.start(); }
 
     @Override
     public void run() {
-        // Calculamos cuánto tiempo debe durar cada "frame" en nanosegundos
-        double intervaloDibujo = 1000000000.0 / FPS; // 0.01666 segundos
-        double siguienteTiempoDibujo = System.nanoTime() + intervaloDibujo;
+        double intervaloDibujo = 1000000000 / 60;
+        double delta = 0;
+        long ultimoTiempo = System.nanoTime();
+        long tiempoActual;
 
-        // Bucle principal del juego
         while (hiloJuego != null) {
-
-            // actualizar osiciones, físicas, colisiones, trampas
-            actualizar();
-
-            // dibujar, repintar la pantalla con los nuevos datos
-            repaint(); // Esto llama automáticamente al método paintComponent()
-
-            // esperar, detener el hilo los milisegundos restantes para clavar los 60 FPS
-            try {
-                double tiempoRestante = siguienteTiempoDibujo - System.nanoTime();
-                tiempoRestante = tiempoRestante / 1000000; // Convertimos de nanosegundos a milisegundos
-
-                // Si actualizó y dibujó muy rápido
-                if (tiempoRestante < 0) {
-                    tiempoRestante = 0;
-                }
-
-                Thread.sleep((long) tiempoRestante);
-
-                siguienteTiempoDibujo += intervaloDibujo;
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            tiempoActual = System.nanoTime();
+            delta += (tiempoActual - ultimoTiempo) / intervaloDibujo;
+            ultimoTiempo = tiempoActual;
+            if (delta >= 1) { actualizar(); repaint(); delta--; }
         }
     }
 
+    public void activarGameOver() { if (!juegoGanado) juegoTerminado = true; }
+
+    public void reiniciarNivel() {
+        jugador.x = 100; jugador.y = 100.0; jugador.velocidadY = 0;
+        juegoTerminado = false; juegoGanado = false; puntaje = 0;
+        meta.cayendo = false; meta.y = 2 * TAMANO_BLOQUE;
+        for (Enemigo e : goombas) e.vivo = true;
+        for (Moneda m : monedas) m.recogida = false;
+        hongosMalos.clear();
+        gestorNivel.generarMundo();
+    }
+
     public void actualizar() {
-        // Si ya ganamos, congelamos todo y no calculamos físicas
-        if (juegoGanado) {
-            return;
-        }
+        if ((juegoGanado || juegoTerminado) && teclas.reiniciar) reiniciarNivel();
+        if (juegoGanado || juegoTerminado) return;
+
         jugador.actualizar(gestorNivel);
+        meta.actualizar(); // Para que el banderín caiga si se rompe la meta
 
-        if (!bloqueSorpresa.usado) {
-            // hitbox sobre mario
-            Rectangle cabezaMario = new Rectangle(jugador.x, (int)jugador.y - 1, TAMANO_BLOQUE, 1);
+        if (teclas.abajo && jugador.x > 27 * TAMANO_BLOQUE && jugador.x < 29 * TAMANO_BLOQUE && jugador.y < 8 * TAMANO_BLOQUE) {
+            jugador.velocidadY = -35.0; // ¡Lanzamiento a la estratosfera!
+        }
 
-            if (cabezaMario.intersects(bloqueSorpresa.obtenerHitbox())) {
-                bloqueSorpresa.usado = true;
-                hongoMalo.aparecer(bloqueSorpresa.x, bloqueSorpresa.y - TAMANO_BLOQUE);
+        // Tubería Real Subterránea (Columna 57)
+        if (teclas.abajo && jugador.x > 56 * TAMANO_BLOQUE && jugador.x < 58 * TAMANO_BLOQUE && jugador.y < 6 * TAMANO_BLOQUE) {
+            jugador.x = 212 * TAMANO_BLOQUE; jugador.y = 2 * TAMANO_BLOQUE;
+        }
+        // Salir del subterráneo (Muro derecho)
+        if (teclas.derecha && jugador.x > 240 * TAMANO_BLOQUE) {
+            jugador.x = 163 * TAMANO_BLOQUE; jugador.y = 5 * TAMANO_BLOQUE;
+        }
+
+        Rectangle cabezaMario = new Rectangle(jugador.x, (int)jugador.y - 1, TAMANO_BLOQUE, 1);
+
+        for (int i = 0; i < gestorNivel.bloquesInteractivos.size(); i++) {
+            Bloque bloque = gestorNivel.bloquesInteractivos.get(i);
+            bloque.actualizar(this);
+            boolean golpeoDesdeAbajo = false;
+
+            if (bloque instanceof BloqueInvisible) {
+                if (jugador.velocidadY < 0 && cabezaMario.intersects(bloque.obtenerHitbox())) golpeoDesdeAbajo = true;
+            } else {
+                if (cabezaMario.intersects(bloque.obtenerHitbox()) && jugador.velocidadY == 0) golpeoDesdeAbajo = true;
+            }
+
+            if (golpeoDesdeAbajo) {
+                bloque.reaccionarGolpe(this);
+                if (bloque instanceof BloqueInvisible) {
+                    jugador.velocidadY = 0;
+                    jugador.y = bloque.y + bloque.alto;
+                } else jugador.velocidadY = 2.0;
             }
         }
 
-        if (jugador.obtenerHitbox().intersects(bloqueOculto.obtenerHitbox())) {
-            if (jugador.velocidadY < 0 && !bloqueOculto.descubierto) {
-                bloqueOculto.descubierto = true;
-                jugador.y = bloqueOculto.y + bloqueOculto.alto;
-                jugador.velocidadY = 0;
-                gestorNivel.colisionesSuelo.add(bloqueOculto.obtenerHitbox()); // Se vuelve sólido
-            }
-        }
-
-        // actualia fisivas del hongo
-        hongoMalo.actualizar(gestorNivel);
-
-        if (hongoMalo.activo && jugador.obtenerHitbox().intersects(hongoMalo.obtenerHitbox())) {
-            System.out.println("te comiste el hongo venenoso.");
-
-            // Regresamos a Mario al inicio
-            jugador.x = 100;
-            jugador.y = 100.0;
-
-            // Reseteamos la trampa para que vuelva a caer si lo intenta de nuevo
-            hongoMalo.activo = false;
-            bloqueSorpresa.usado = false;
-        }
-
-        if (jugador.obtenerHitbox().intersects(meta.obtenerHitbox())) {
-            juegoGanado = true;
+        for (int i = 0; i < hongosMalos.size(); i++) {
+            HongoVenenoso hongo = hongosMalos.get(i);
+            hongo.actualizar(gestorNivel);
+            if (hongo.activo && jugador.obtenerHitbox().intersects(hongo.obtenerHitbox())) activarGameOver();
         }
 
         for (Enemigo goomba : goombas) {
             if (goomba.vivo) {
-                // solo actualizamos al enemigo si Mario está en la misma pantalla
-                if (Math.abs(goomba.x - jugador.x) < ANCHO_PANTALLA + 100) {
-                    goomba.actualizar(gestorNivel);
-                }
-                // Si Mario choca con el enemigo
+                if (Math.abs(goomba.x - jugador.x) < ANCHO_PANTALLA + 100) goomba.actualizar(gestorNivel, jugador);
                 if (jugador.obtenerHitbox().intersects(goomba.obtenerHitbox())) {
-
-                    // mario debe estar cayendo Y su pie debe estar arriba del enemigo
                     if (jugador.velocidadY > 0 && jugador.y + TAMANO_BLOQUE - 15 <= goomba.y) {
-                        goomba.vivo = false; // El enemigo muere
-                        jugador.velocidadY = -8; // Mario da un pequeño rebote en el aire
-                    } else {
-                        // Si no lo aplastó, Mario muere
-                        System.out.println("¡Un enemigo te ha atrapado!");
-                        jugador.x = 100;
-                        jugador.y = 100.0;
-
-                        // Resucitamos a los enemigos al morir Mario para que no sea trampa
-                        for (Enemigo e : goombas) {
-                            e.vivo = true;
-                        }
-                    }
+                        goomba.vivo = false; jugador.velocidadY = -8;
+                    } else activarGameOver();
                 }
             }
         }
-        //monedas
+
+        // la Moneda Maldita
         for (Moneda moneda : monedas) {
-            // Si no ha sido recogida y Mario la toca
             if (!moneda.recogida && jugador.obtenerHitbox().intersects(moneda.obtenerHitbox())) {
-                moneda.recogida = true; // Desaparece
-                puntaje += 100;         // Sumamos 100 puntos
-                efectosSonido.reproducir("/moneda.wav");
+                moneda.recogida = true;
+                if (moneda.esMaldita) {
+                    HongoVenenoso letal = new HongoVenenoso(this, moneda.x, moneda.y);
+                    letal.aparecer(moneda.x, moneda.y);
+                    hongosMalos.add(letal);
+                } else puntaje += 100;
+            }
+        }
+
+        // el Banderín Traicionero (1000 Puntos Requeridos)
+        if (jugador.obtenerHitbox().intersects(meta.obtenerHitbox())) {
+            if (puntaje >= 1000) juegoGanado = true;
+            else if (!meta.cayendo) {
+                meta.cayendo = true;
+                for (Bloque b : gestorNivel.bloquesInteractivos) {
+                    if (b instanceof BloqueFalso && b.x == meta.x && b.y == meta.y + meta.alto) {
+                        ((BloqueFalso)b).cayendo = true; // Se rompe el piso de la meta
+                    }
+                }
             }
         }
 
         int centroPantallaX = ANCHO_PANTALLA / 2;
         offsetCamaraX = jugador.x - centroPantallaX;
-
-        // Evitamos que la cámara muestre áreas a la izquierda del nivel
-        if (offsetCamaraX < 0) {
-            offsetCamaraX = 0;
-        }
+        if (offsetCamaraX < 0) offsetCamaraX = 0;
+        if (offsetCamaraX > 190 * TAMANO_BLOQUE && jugador.x < 205 * TAMANO_BLOQUE) offsetCamaraX = 190 * TAMANO_BLOQUE;
     }
 
     @Override
@@ -199,57 +186,45 @@ public class PanelJuego extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // FONDO cielo de Super Mario - Color azul claro
-        this.setBackground(new Color(107, 140, 255));
+        if (jugador.x > 205 * TAMANO_BLOQUE) this.setBackground(Color.BLACK);
+        else this.setBackground(new Color(107, 140, 255));
 
-        // Todo lo que se dibuje después de esta línea, se desplazará
         g2d.translate(-offsetCamaraX, 0);
 
-
         gestorNivel.dibujar(g2d);
-        bloqueOculto.dibujar(g2d);
-        bloqueSorpresa.dibujar(g2d);
-        hongoMalo.dibujar(g2d);
-
-        // Dibujamos los enemigos
-        for (Enemigo goomba : goombas) {
-            goomba.dibujar(g2d);
-        }
-
-        // ... (después de dibujar los enemigos y antes de Mario)
-        for (Moneda moneda : monedas) {
-            moneda.dibujar(g2d);
-        }
-
-        meta.dibujar(g2d);
-        jugador.dibujar(g2d);
+        for (HongoVenenoso hongo : hongosMalos) hongo.dibujar(g2d);
+        for (Moneda moneda : monedas) moneda.dibujar(g2d);
+        for (Enemigo goomba : goombas) goomba.dibujar(g2d);
 
         meta.dibujar(g2d);
         jugador.dibujar(g2d);
 
         g2d.translate(offsetCamaraX, 0);
 
-        // Este es el texto que acompañará al jugador sin importar cuánto avance en el nivel
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 24));
-        g2d.drawString("MARIO", 40, 40);
+        g2d.setColor(Color.WHITE); g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        g2d.drawString("MARIO", 50, 30); g2d.drawString(String.format("%06d", puntaje), 50, 55);
 
-        // formato del puntaje de 6 dígitos
-        g2d.drawString(String.format("%06d", puntaje), 40, 70);
-
-        if (juegoGanado) {
-            g2d.setColor(new Color(0, 0, 0, 180));
-            g2d.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
-
-            g2d.setColor(new Color(255, 215, 0));
-            g2d.setFont(new Font("Arial", Font.BOLD, 60));
-            g2d.drawString("¡nivel terminado!", ANCHO_PANTALLA / 2 - 280, ALTO_PANTALLA / 2);
-
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("Arial", Font.PLAIN, 20));
-            g2d.drawString("gracias", ANCHO_PANTALLA / 2 - 140, (ALTO_PANTALLA / 2) + 50);
+        // Mensaje del Troleo Final
+        if (meta.cayendo && !juegoTerminado && !juegoGanado) {
+            g2d.setColor(Color.WHITE); g2d.setFont(new Font("Arial", Font.BOLD, 30));
+            g2d.drawString("¡INSUFICIENTES MONEDAS!", ANCHO_PANTALLA / 2 - 200, ALTO_PANTALLA / 2);
         }
 
+        if (juegoGanado) {
+            g2d.setColor(new Color(0, 0, 0, 180)); g2d.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
+            g2d.setColor(new Color(255, 215, 0)); g2d.setFont(new Font("Arial", Font.BOLD, 60));
+            g2d.drawString("¡NIVEL SUPERADO!", ANCHO_PANTALLA / 2 - 280, ALTO_PANTALLA / 2);
+        }
+
+        if (juegoTerminado) {
+            g2d.setColor(new Color(50, 0, 0, 180)); g2d.fillRect(0, 0, ANCHO_PANTALLA, ALTO_PANTALLA);
+            g2d.setColor(Color.RED); g2d.setFont(new Font("Arial", Font.BOLD, 70));
+            g2d.drawString("GAME OVER", ANCHO_PANTALLA / 2 - 210, ALTO_PANTALLA / 2 - 20);
+            if (System.currentTimeMillis() % 1000 > 500) {
+                g2d.setColor(Color.WHITE); g2d.setFont(new Font("Arial", Font.PLAIN, 24));
+                g2d.drawString("Presiona 'R' o 'ENTER' para reiniciar", ANCHO_PANTALLA / 2 - 210, (ALTO_PANTALLA / 2) + 40);
+            }
+        }
         g2d.dispose();
     }
 }

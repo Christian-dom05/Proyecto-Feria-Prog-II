@@ -3,6 +3,9 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
+/**
+ * queda pendiente poner audios
+ */
 public class GestorSonido {
 
     public void reproducir(String rutaSonido) {

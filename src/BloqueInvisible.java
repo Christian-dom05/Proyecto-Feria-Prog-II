@@ -1,37 +1,36 @@
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
-/**
- * esta clase representa el bloque que no se ve hasta que mario lo golpea
- */
-public class BloqueInvisible {
-
-    int x, y, ancho, alto;
-    public boolean descubierto;
+public class BloqueInvisible extends Bloque {
+    static BufferedImage imgVacio;
 
     public BloqueInvisible(int x, int y, int ancho, int alto) {
-        this.x = x;
-        this.y = y;
-        this.ancho = ancho;
-        this.alto = alto;
-        this.descubierto = false; // esta variable indica cuando el jugador ve o deja de ver al bloque
+        super(x, y, ancho, alto);
+        this.activo = false;
+
+        try {
+            java.io.InputStream is = getClass().getResourceAsStream("/bloque_vacio.png");
+            if (is != null) imgVacio = ImageIO.read(is);
+        } catch(Exception e){}
     }
 
-    // El Hitbox es una caja matemática del tamaño del bloque
-    public Rectangle obtenerHitbox() {
-        return new Rectangle(x, y, ancho, alto);
+    @Override
+    public void reaccionarGolpe(PanelJuego panel) {
+        if (!activo) {
+            activo = true;
+        }
     }
 
+    public void bloqueTrampa(GestorNivel gestorNivel){
+
+    }
+
+    @Override
     public void dibujar(Graphics2D g2d) {
-        // Solo dibujamos el bloque si Mario ya chocó con él
-        if (descubierto) {
-            g2d.setColor(Color.ORANGE); // Simulamos el color de un bloque sorpresa
-            g2d.fillRect(x, y, ancho, alto);
-
-            // Le ponemos un borde negro para que se vea como un bloque de Mario
-            g2d.setColor(Color.BLACK);
-            g2d.drawRect(x, y, ancho, alto);
+        // Solo dibujamos si Mario ya lo golpeó
+        if (activo && imgVacio != null) {
+            g2d.drawImage(imgVacio, x, y, ancho, alto, null);
         }
     }
 }

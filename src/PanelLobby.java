@@ -21,20 +21,19 @@ public class PanelLobby extends JPanel {
         JLabel titulo = new JLabel("Mario Bros", SwingConstants.CENTER);
         titulo.setFont(new Font("Arial", Font.BOLD, 40));
         titulo.setForeground(Color.WHITE);
-        titulo.setBounds(0, 150, 768, 50); // Ajusta el 768 al ANCHO_PANTALLA al juego
+        titulo.setBounds(0, 150, 768, 50);
         this.add(titulo);
 
-        // BOTÓN DE INICIO
+        // boton de inicio
         JButton botonIniciar = new JButton("Iniciar Juego");
         botonIniciar.setFont(new Font("Arial", Font.BOLD, 20));
         botonIniciar.setBounds(284, 300, 200, 50); // Centrado
-        botonIniciar.setFocusPainted(false); // Quita el borde feo al hacer clic
+        botonIniciar.setFocusPainted(false); // Quita el borde al hacer click
 
         // Acción del botón
         botonIniciar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Al hacer clic, le decimos a la ventana principal que cambie la "carta"
                 ventanaPrincipal.cambiarPantallaJuego();
             }
         });

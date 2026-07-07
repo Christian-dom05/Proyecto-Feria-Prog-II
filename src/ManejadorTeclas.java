@@ -6,11 +6,11 @@ import java.awt.event.KeyListener;
  */
 public class ManejadorTeclas implements KeyListener {
 
-    public boolean arriba, abajo, izquierda, derecha;
+    public boolean arriba, abajo, izquierda, derecha, reiniciar;
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // no se necesita usar esta variable, está acá porque si
+
     }
 
     @Override
@@ -22,6 +22,7 @@ public class ManejadorTeclas implements KeyListener {
         if (codigo == KeyEvent.VK_S || codigo == KeyEvent.VK_DOWN) abajo = true;
         if (codigo == KeyEvent.VK_A || codigo == KeyEvent.VK_LEFT) izquierda = true;
         if (codigo == KeyEvent.VK_D || codigo == KeyEvent.VK_RIGHT) derecha = true;
+        if (codigo == KeyEvent.VK_R || codigo == KeyEvent.VK_ENTER) reiniciar = true;
     }
 
     @Override
@@ -33,5 +34,6 @@ public class ManejadorTeclas implements KeyListener {
         if (codigo == KeyEvent.VK_S || codigo == KeyEvent.VK_DOWN) abajo = false;
         if (codigo == KeyEvent.VK_A || codigo == KeyEvent.VK_LEFT) izquierda = false;
         if (codigo == KeyEvent.VK_D || codigo == KeyEvent.VK_RIGHT) derecha = false;
+        if (codigo == KeyEvent.VK_R || codigo == KeyEvent.VK_ENTER) reiniciar = false;
     }
 }

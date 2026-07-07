@@ -129,9 +129,11 @@ public class Jugador {
         for (Rectangle bloque : nivel.colisionesSuelo) {
             if (hitboxY.intersects(bloque)) {
                 if (velocidadY > 0) { // Si caía
-                    y = (double) (bloque.y - panel.TAMANO_BLOQUE);
-                    velocidadY = 0;
-                    enSuelo = true;
+                    if (y + panel.TAMANO_BLOQUE - velocidadY <= bloque.y + 10) {
+                        y = (double) (bloque.y - panel.TAMANO_BLOQUE);
+                        velocidadY = 0;
+                        enSuelo = true;
+                    }
                 }
                 else if (velocidadY < 0) { // Si chocaba con un techo
                     y = (double) (bloque.y + bloque.height);
@@ -154,10 +156,9 @@ public class Jugador {
         }
 
         // poonemos un limite de muerte por caida
-        if (y > panel.ALTO_PANTALLA + panel.TAMANO_BLOQUE) { // Le sumamos un bloque extra de margen
-            System.out.println("¡Mario ha muerto! Cayó por el pozo.");
-            x = 100;
-            y = 100.0;
+        if (y > panel.ALTO_PANTALLA + panel.TAMANO_BLOQUE) {
+            // Solo si realmente cayó al abismo infinito
+            panel.activarGameOver();
         }
     }
 
