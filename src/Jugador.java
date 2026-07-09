@@ -3,6 +3,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
+/**
+ * Clase que representa al jugador
+ */
 public class Jugador {
 
     PanelJuego panel;
@@ -128,7 +131,7 @@ public class Jugador {
         // aquí nuevamente se comprueban las colisiones
         for (Rectangle bloque : nivel.colisionesSuelo) {
             if (hitboxY.intersects(bloque)) {
-                if (velocidadY > 0) { // Si caía
+                if (velocidadY > 0) { // Si el jugador cae...
                     if (y + panel.TAMANO_BLOQUE - velocidadY <= bloque.y + 10) {
                         y = (double) (bloque.y - panel.TAMANO_BLOQUE);
                         velocidadY = 0;

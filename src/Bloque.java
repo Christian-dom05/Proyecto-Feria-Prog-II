@@ -1,6 +1,9 @@
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
+/**
+ * Clase genérica abstracta para todos los tipos de bloques
+ */
 public abstract class Bloque {
     public int x, y, ancho, alto;
     public Rectangle hitbox;
@@ -19,6 +22,7 @@ public abstract class Bloque {
         return hitbox;
     }
 
+    // métodos que heredarán las clases hijas
     public abstract void reaccionarGolpe(PanelJuego panel);
 
     public void actualizar(PanelJuego panel) {}

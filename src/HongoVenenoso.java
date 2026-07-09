@@ -5,18 +5,18 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
+/**
+ * Clase que representa el hongo venenoso que quitará vida a Mario
+ */
 public class HongoVenenoso {
 
     PanelJuego panel;
     public int x;
     public double y;
-
     int velocidadX;
     double velocidadY;
     double gravedad;
-
     public boolean activo;
-
     BufferedImage imagenHongo;
 
     public HongoVenenoso(PanelJuego panel, int x, int y) {
@@ -42,6 +42,7 @@ public class HongoVenenoso {
     }
 
     public void cargarImagen() {
+        // cargamos la imagen del hongo
         try {
             java.io.InputStream flujoImagen = getClass().getResourceAsStream("/hongo.png");
             if (flujoImagen != null) {
@@ -54,6 +55,7 @@ public class HongoVenenoso {
         }
     }
 
+    // devolvemos la hitbox del hongo
     public Rectangle obtenerHitbox() {
         return new Rectangle(x, (int)y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE);
     }
@@ -77,10 +79,11 @@ public class HongoVenenoso {
         y += velocidadY;
 
         Rectangle hitboxY = obtenerHitbox();
+        // interactuamos el hitbox del hongo con el de los bloques
         for (Rectangle bloque : nivel.colisionesSuelo) {
             if (hitboxY.intersects(bloque)) {
                 if (velocidadY > 0) {
-                    y = bloque.y - panel.TAMANO_BLOQUE;
+                    y = bloque.y - panel.TAMANO_BLOQUE; // restamos el tamaño del hongo al eje Y para que el hongo no traspase el suelo
                     velocidadY = 0;
                 }
             }
@@ -91,6 +94,7 @@ public class HongoVenenoso {
         }
     }
 
+    // método para dibujar un hongo
     public void dibujar(Graphics2D g2d) {
         if (!activo) return;
 
@@ -98,6 +102,7 @@ public class HongoVenenoso {
         if (imagenHongo != null) {
             g2d.drawImage(imagenHongo, x, (int)y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE, null);
         } else {
+            // aquí dibujamos un cuadro morado si no encontramos la imagen para el hongo
             g2d.setColor(new Color(138, 43, 226));
             g2d.fillRect(x, (int)y, panel.TAMANO_BLOQUE, panel.TAMANO_BLOQUE);
         }

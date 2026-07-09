@@ -2,6 +2,13 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
+/**
+ * Esta clase representa el banderín del final del juego, este banderín
+ * es el que Mario debe tocar para ganar el juego
+ * si recolecta 1000 en monedas (cada moneda vale 100)
+ * entonces Mario Gana. En caso contrario, el banderín se cae del mapa
+ * usando el método actualizar()
+ */
 public class Banderin {
     public int x, y, ancho, alto;
     public boolean cayendo = false;
@@ -20,11 +27,12 @@ public class Banderin {
 
     public void actualizar() {
         if (cayendo) {
-            velY += 0.4;
+            velY += 0.4; // velocidad de caída
             y += velY; // El banderín se precipita al vacío
         }
     }
 
+    // método para dibujar el banderín
     public void dibujar(Graphics2D g2d) {
         g2d.setColor(new Color(200, 200, 200));
         g2d.fillRect(x + (ancho / 2) - 4, y, 8, alto);
